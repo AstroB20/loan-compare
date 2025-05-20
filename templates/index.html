@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Loan Comparator</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 40px auto;
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 6px;
+        margin-top: 4px;
+      }
+      button {
+        margin-top: 20px;
+        padding: 10px 15px;
+      }
+      .result {
+        margin-top: 30px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        background: #f9f9f9;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Compare Two Loans</h1>
+
+    <form id="loanForm">
+      <h2>Loan 1</h2>
+      <label
+        >Principal
+        <input type="number" step="0.01" id="loan1_principal" required />
+      </label>
+      <label
+        >Annual Interest Rate (e.g., 0.05 for 5%)
+        <input type="number" step="0.0001" id="loan1_annual_rate" required />
+      </label>
+      <label
+        >Term (years)
+        <input type="number" step="1" id="loan1_term_years" required />
+      </label>
+      <label
+        >Compounding Frequency
+        <select id="loan1_compounding_freq" required>
+          <option value="monthly">Monthly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="semi_annual">Semi-Annual</option>
+          <option value="annual">Annual</option>
+        </select>
+      </label>
+      <label
+        >Repayment Frequency
+        <select id="loan1_repayment_freq" required>
+          <option value="monthly">Monthly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="semi_annual">Semi-Annual</option>
+          <option value="annual">Annual</option>
+        </select>
+      </label>
+      <label
+        >Inflation Rate (e.g., 0.02 for 2%)
+        <input
+          type="number"
+          step="0.0001"
+          id="loan1_inflation_rate"
+          value="0"
+        />
+      </label>
+
+      <h2>Loan 2</h2>
+      <label
+        >Principal
+        <input type="number" step="0.01" id="loan2_principal" required />
+      </label>
+      <label
+        >Annual Interest Rate (e.g., 0.05 for 5%)
+        <input type="number" step="0.0001" id="loan2_annual_rate" required />
+      </label>
+      <label
+        >Term (years)
+        <input type="number" step="1" id="loan2_term_years" required />
+      </label>
+      <label
+        >Compounding Frequency
+        <select id="loan2_compounding_freq" required>
+          <option value="monthly">Monthly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="semi_annual">Semi-Annual</option>
+          <option value="annual">Annual</option>
+        </select>
+      </label>
+      <label
+        >Repayment Frequency
+        <select id="loan2_repayment_freq" required>
+          <option value="monthly">Monthly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="semi_annual">Semi-Annual</option>
+          <option value="annual">Annual</option>
+        </select>
+      </label>
+      <label
+        >Inflation Rate (e.g., 0.02 for 2%)
+        <input
+          type="number"
+          step="0.0001"
+          id="loan2_inflation_rate"
+          value="0"
+        />
+      </label>
+
+      <button type="submit">Compare Loans</button>
+    </form>
+
+    <div class="result" id="result"></div>
+
+    <script>
+      const form = document.getElementById("loanForm");
+      const resultDiv = document.getElementById("result");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const loan1 = {
+          principal: parseFloat(
+            document.getElementById("loan1_principal").value
+          ),
+          annual_rate: parseFloat(
+            document.getElementById("loan1_annual_rate").value
+          ),
+          term_years: parseInt(
+            document.getElementById("loan1_term_years").value
+          ),
+          compounding_freq: document.getElementById("loan1_compounding_freq")
+            .value,
+          repayment_freq: document.getElementById("loan1_repayment_freq").value,
+          inflation_rate: parseFloat(
+            document.getElementById("loan1_inflation_rate").value
+          ),
+        };
+
+        const loan2 = {
+          principal: parseFloat(
+            document.getElementById("loan2_principal").value
+          ),
+          annual_rate: parseFloat(
+            document.getElementById("loan2_annual_rate").value
+          ),
+          term_years: parseInt(
+            document.getElementById("loan2_term_years").value
+          ),
+          compounding_freq: document.getElementById("loan2_compounding_freq")
+            .value,
+          repayment_freq: document.getElementById("loan2_repayment_freq").value,
+          inflation_rate: parseFloat(
+            document.getElementById("loan2_inflation_rate").value
+          ),
+        };
+
+        try {
+          const response = await fetch("/compare_loans", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ loan1, loan2 }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            let better =
+              data.better_loan === "equal"
+                ? "Both loans are equal"
+                : `${data.better_loan} is better`;
+
+            resultDiv.innerHTML = `
+            <h3>Results</h3>
+            <p><strong>Loan 1:</strong> Total repayment (real): $${data.loan1.total_repayment_real}</p>
+            <p><strong>Loan 2:</strong> Total repayment (real): $${data.loan2.total_repayment_real}</p>
+            <p><strong>Better Loan:</strong> ${better}</p>
+          `;
+          } else {
+            resultDiv.textContent = `Error: ${data.error}`;
+          }
+        } catch (err) {
+          resultDiv.textContent = "Error communicating with server.";
+        }
+      });
+    </script>
+  </body>
+</html>
